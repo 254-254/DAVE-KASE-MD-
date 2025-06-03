@@ -5,3 +5,4 @@ Http discovery
 <p align="center">
   <a href="https://render.com/deploy">
 <a href="https://img.shields.io/badge/🚀_DEPLOY_ON_RENDER-000000?style=for-the-badge&logo=render&logoColor=white&color=61DAFB">
+<a href="https://wa.me/254734908425
