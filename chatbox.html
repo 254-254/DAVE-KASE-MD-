@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chatbox - DAVE-KASE-MD-</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#98a0b3;--user:#0ea5a9}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial; background:linear-gradient(180deg,#071226 0%, #081427 60%);color:#e6eef8;display:flex;align-items:center;justify-content:center;height:100vh}
+    .container{width:420px;max-width:94vw;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    header{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;gap:12px;align-items:center}
+    .title{font-weight:600;font-size:16px}
+    .subtitle{font-size:12px;color:var(--muted)}
+    .messages{height:420px;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background-image:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    .message{max-width:78%;padding:10px 12px;border-radius:12px;line-height:1.35;font-size:14px}
+    .message.user{align-self:flex-end;background:linear-gradient(90deg,var(--user),#0bb6bf);color:#002025;border-bottom-right-radius:6px}
+    .message.bot{align-self:flex-start;background:rgba(255,255,255,0.03);color:#dbeafe;border-bottom-left-radius:6px}
+    .meta{font-size:11px;color:var(--muted);margin-top:6px;display:flex;gap:8px;align-items:center}
+    .input{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,0.02);gap:8px;align-items:center}
+    textarea{flex:1;min-height:42px;max-height:120px;resize:none;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit;font-size:14px}
+    button{background:var(--accent);border:none;color:#042027;padding:10px 14px;font-weight:600;border-radius:10px;cursor:pointer}
+    .controls{display:flex;gap:8px}
+    .small{font-size:12px;color:var(--muted);padding:8px}
+    .clear-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer}
+    .footer-note{padding:10px 12px;font-size:12px;color:var(--muted);border-top:1px solid rgba(255,255,255,0.02)}
+    @media (max-width:480px){.container{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Chatbox">
+    <header>
+      <div style="display:flex;flex-direction:column">
+        <div class="title">Chatbox</div>
+        <div class="subtitle">DAVE-KASE-MD- — simple client-side demo</div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="small">Local demo</div>
+    </header>
+
+    <div class="messages" id="messages" aria-live="polite"></div>
+
+    <div class="input">
+      <textarea id="input" placeholder="Type a message..." aria-label="Message input"></textarea>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="send">Send</button>
+        <button class="clear-btn" id="clear">Clear</button>
+      </div>
+    </div>
+    <div class="footer-note">This chatbox is a client-side demo. Add a backend to send/receive real messages.</div>
+  </div>
+
+  <script>
+    (function(){
+      const MESSAGES_KEY = 'dkmd_chat_messages_v1';
+      const messagesEl = document.getElementById('messages');
+      const inputEl = document.getElementById('input');
+      const sendBtn = document.getElementById('send');
+      const clearBtn = document.getElementById('clear');
+
+      function loadMessages(){
+        try{const raw = localStorage.getItem(MESSAGES_KEY); return raw?JSON.parse(raw):[] }catch(e){return[]}
+      }
+      function saveMessages(list){ localStorage.setItem(MESSAGES_KEY, JSON.stringify(list)) }
+      function formatTime(ts){ const d=new Date(ts); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) }
+
+      let msgs = loadMessages();
+
+      function render(){
+        messagesEl.innerHTML='';
+        msgs.forEach(m => {
+          const el = document.createElement('div');
+          el.className = 'message ' + (m.role === 'user' ? 'user' : 'bot');
+          el.innerHTML = `<div class="content">${escapeHtml(m.text)}</div><div class="meta">${m.role === 'user' ? 'You' : 'Bot'} · ${formatTime(m.ts)}</div>`;
+          messagesEl.appendChild(el);
+        });
+        // scroll to bottom
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+      function pushMessage(role, text){ const m = {role, text, ts: Date.now()}; msgs.push(m); saveMessages(msgs); render(); }
+
+      function mockBotReply(userText){
+        // A tiny simulated reply: echo with transformation
+        const canned = [
+          "Thanks for your message!",
+          "I heard you — tell me more.",
+          "Interesting — could you expand on that?",
+          "Got it. What would you like to do next?",
+          "Here's a quick echo:"
+        ];
+        const pick = canned[Math.floor(Math.random()*canned.length)];
+        return `${pick} "${userText.length>120 ? userText.slice(0,120)+'...' : userText}"`;
+      }
+
+      function send(){
+        const text = inputEl.value.trim();
+        if(!text) return;
+        pushMessage('user', text);
+        inputEl.value = '';
+        inputEl.focus();
+
+        // simulated typing indicator
+        const typingToken = {role:'bot', text:'...', ts:Date.now()};
+        msgs.push(typingToken); render();
+
+        setTimeout(()=>{
+          // remove typing
+          msgs = msgs.filter(m => m !== typingToken);
+          const reply = mockBotReply(text);
+          pushMessage('bot', reply);
+        }, 700 + Math.random()*900);
+      }
+
+      sendBtn.addEventListener('click', send);
+      inputEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+
+      clearBtn.addEventListener('click', ()=>{
+        if(confirm('Clear local messages?')){ msgs = []; saveMessages(msgs); render(); }
+      });
+
+      // initial render
+      render();
+    })();
+  </script>
+</body>
+</html>
